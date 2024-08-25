@@ -4,14 +4,12 @@ use warnings;
 use utf8;
 
 use Carp ();
+use Syntax::Keyword::Assert;
 use Types::Standard ();
-use Devel::StrictMode;
 
 sub new {
     my ($class, $dbh) = @_;
-    STRICT && do {
-        Carp::croak "Usage: MyQuery->new(\$dbh)" unless (Types::Standard::InstanceOf['DBI::db'])->check($dbh)
-    };
+    assert { (Types::Standard::InstanceOf['DBI::db'])->check($dbh) };
     bless [$dbh], $class;
 }
 
@@ -59,9 +57,7 @@ use kura CreateAuthorParams => Types::Standard::Dict[
 
 sub CreateAuthor {
     my ($self, $arg) = @_;
-    STRICT && do {
-        Carp::croak "Usage: CreateAuthor(\$arg)" unless CreateAuthorParams->check($arg);
-    };
+    assert { CreateAuthorParams->check($arg) };
 
     my $sth = $self->dbh->prepare($self->__set_comment($CreateAuthor));
     my @bind = ($arg->{name}, $arg->{bio});
@@ -76,9 +72,7 @@ WHERE id = ?
 
 sub DeleteAuthor {
     my ($self, $id) = @_;
-    STRICT && do {
-        Carp::croak "Usage: DeleteAuthor(\$id)" unless Types::Standard::Int->check($id);
-    };
+    assert { Types::Standard::Int->check($id) };
 
     my $sth = $self->dbh->prepare($self->__set_comment($DeleteAuthor));
     my @bind = ($id);
@@ -93,9 +87,7 @@ WHERE id = ? LIMIT 1
 
 sub GetAuthor {
     my ($self, $id) = @_;
-    STRICT && do {
-        Carp::croak "Usage: GetAuthor(\$id)" unless Types::Standard::Int->check($id);
-    };
+    assert { Types::Standard::Int->check($id) };
 
     my $sth = $self->dbh->prepare($self->__set_comment($GetAuthor));
     my @bind = ($id);
@@ -104,9 +96,7 @@ sub GetAuthor {
     my $row = $ret && $sth->fetchrow_hashref;
     return unless $row;
 
-    STRICT && do {
-        Carp::croak "Invalid row" unless Author->check($row);
-    };
+    assert { Author->check($row) };
     return $row;
 }
 
@@ -123,9 +113,47 @@ sub ListAuthors {
 
     my $rows = $ret && $sth->fetchall_arrayref({});
 
-    STRICT && do {
-        Carp::croak "Invalid rows" unless (Types::Standard::ArrayRef[Author])->check($rows);
-    };
+    assert { (Types::Standard::ArrayRef[Author])->check($rows) };
+    return $rows;
+}
+
+my $CountAuthors = q{-- name: CountAuthors :one
+SELECT count(*) FROM authors
+};
+
+sub CountAuthors {
+    my ($self) = @_;
+
+    my $sth = $self->dbh->prepare($self->__set_comment($CountAuthors));
+    my $ret = $sth->execute() or Carp::croak $sth->errstr;
+
+    my $row = $ret && $sth->fetchrow_arrayref;
+    return unless $row;
+
+    assert { Types::Standard::Int->check($row->[0]) };
+    return $row->[0];
+}
+
+my $CountAuthorsByName = q{-- name: CountAuthorsByName :many
+SELECT name , count(*) AS count FROM authors
+GROUP BY name
+ORDER BY count
+};
+
+use kura CountAuthorsByNameRow => Types::Standard::Dict[
+    name => Types::Standard::Str,
+    count => Types::Standard::Int,
+];
+
+sub CountAuthorsByName {
+    my ($self) = @_;
+
+    my $sth = $self->dbh->prepare($self->__set_comment($CountAuthorsByName));
+    my $ret = $sth->execute() or Carp::croak $sth->errstr;
+
+    my $rows = $ret && $sth->fetchall_arrayref({});
+
+    assert { (Types::Standard::ArrayRef[CountAuthorsByNameRow])->check($rows) };
     return $rows;
 }
 
