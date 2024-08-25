@@ -71,13 +71,13 @@ sub test_strict_mode : Tests {
     my $illegal_params = { naaame => 'John' };
 
     if (STRICT) {
-        # Not query invalid data
+        note 'Not query invalid data';
         like dies {
             $q->CreateAuthor($illegal_params);
         }, qr[Assertion failed at t/lib/Test/MyQuery.pm];
     }
     else {
-        # Query invalid data
+        note 'Query invalid data';
         ok warning {
             like dies {
                 $q->CreateAuthor($illegal_params);
