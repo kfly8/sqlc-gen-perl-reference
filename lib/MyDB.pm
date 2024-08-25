@@ -72,7 +72,7 @@ WHERE id = ?
 
 sub DeleteAuthor {
     my ($self, $id) = @_;
-    assert { Int->check($id) };
+    assert { Types::Standard::Int->check($id) };
 
     my $sth = $self->dbh->prepare($self->__set_comment($DeleteAuthor));
     my @bind = ($id);
@@ -87,7 +87,7 @@ WHERE id = ? LIMIT 1
 
 sub GetAuthor {
     my ($self, $id) = @_;
-    assert { Int->check($id) };
+    assert { Types::Standard::Int->check($id) };
 
     my $sth = $self->dbh->prepare($self->__set_comment($GetAuthor));
     my @bind = ($id);
@@ -130,7 +130,7 @@ sub CountAuthors {
     my $row = $ret && $sth->fetchrow_arrayref;
     return unless $row;
 
-    assert { Int->check($row->[0]) };
+    assert { Types::Standard::Int->check($row->[0]) };
     return $row->[0];
 }
 
