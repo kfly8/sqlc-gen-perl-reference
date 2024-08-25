@@ -5,6 +5,8 @@ requires 'Syntax::Keyword::Assert', '0.12';
 on 'test' => sub {
     requires 'DBI';
     requires 'DBD::SQLite';
-    requires 'Test2::V0';
     requires 'DBIx::Tracer';
+
+    requires 'Test2::V0';
+    requires 'Test::Class';
 };

@@ -1,4 +1,4 @@
-package MyDB;
+package MyQuery;
 use strict;
 use warnings;
 use utf8;
