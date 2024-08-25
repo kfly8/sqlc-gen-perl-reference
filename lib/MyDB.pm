@@ -59,7 +59,7 @@ sub CreateAuthor {
     my ($self, $arg) = @_;
     assert { CreateAuthorParams->check($arg) };
 
-    my $sth = $self->dbh->prepare($CreateAuthor);
+    my $sth = $self->dbh->prepare($self->__set_comment($CreateAuthor));
     my @bind = ($arg->{name}, $arg->{bio});
     my $ret = $sth->execute(@bind) or croak $sth->errstr;
     return $ret;
@@ -74,7 +74,7 @@ sub DeleteAuthor {
     my ($self, $id) = @_;
     assert { Int->check($id) };
 
-    my $sth = $self->dbh->prepare($DeleteAuthor);
+    my $sth = $self->dbh->prepare($self->__set_comment($DeleteAuthor));
     my @bind = ($id);
     my $ret = $sth->execute(@bind) or croak $sth->errstr;
     return $ret;
@@ -89,7 +89,7 @@ sub GetAuthor {
     my ($self, $id) = @_;
     assert { Int->check($id) };
 
-    my $sth = $self->dbh->prepare($GetAuthor);
+    my $sth = $self->dbh->prepare($self->__set_comment($GetAuthor));
     my @bind = ($id);
     my $ret = $sth->execute(@bind) or croak $sth->errstr;
 
@@ -124,7 +124,7 @@ SELECT count(*) FROM authors
 sub CountAuthors {
     my ($self) = @_;
 
-    my $sth = $self->dbh->prepare($CountAuthors);
+    my $sth = $self->dbh->prepare($self->__set_comment($CountAuthors));
     my $ret = $sth->execute() or croak $sth->errstr;
 
     my $row = $ret && $sth->fetchrow_arrayref;
@@ -148,7 +148,7 @@ use kura CountAuthorsByNameRow => Dict[
 sub CountAuthorsByName {
     my ($self) = @_;
 
-    my $sth = $self->dbh->prepare($CountAuthorsByName);
+    my $sth = $self->dbh->prepare($self->__set_comment($CountAuthorsByName));
     my $ret = $sth->execute() or croak $sth->errstr;
 
     my $rows = $ret && $sth->fetchall_arrayref({});
