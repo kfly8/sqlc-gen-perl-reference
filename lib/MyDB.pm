@@ -3,13 +3,13 @@ use strict;
 use warnings;
 use utf8;
 
-use Carp;
+use Carp ();
 use Syntax::Keyword::Assert;
-use Types::Standard -types;
+use Types::Standard ();
 
 sub new {
     my ($class, $dbh) = @_;
-    assert { (InstanceOf['DBI::db'])->check($dbh) };
+    assert { (Types::Standard::InstanceOf['DBI::db'])->check($dbh) };
     bless [$dbh], $class;
 }
 
@@ -35,10 +35,10 @@ sub __set_comment {
 }
 
 # Define Models
-use kura Author => Dict[
-  id => Int,
-  name => Str,
-  bio => Str,
+use kura Author => Types::Standard::Dict[
+  id => Types::Standard::Int,
+  name => Types::Standard::Str,
+  bio => Types::Standard::Str,
 ];
 
 # Define Queries
@@ -50,9 +50,9 @@ INSERT INTO authors (
 )
 };
 
-use kura CreateAuthorParams => Dict[
-    name => Str,
-    bio => Str,
+use kura CreateAuthorParams => Types::Standard::Dict[
+    name => Types::Standard::Str,
+    bio => Types::Standard::Str,
 ];
 
 sub CreateAuthor {
@@ -61,7 +61,7 @@ sub CreateAuthor {
 
     my $sth = $self->dbh->prepare($self->__set_comment($CreateAuthor));
     my @bind = ($arg->{name}, $arg->{bio});
-    my $ret = $sth->execute(@bind) or croak $sth->errstr;
+    my $ret = $sth->execute(@bind) or Carp::croak $sth->errstr;
     return $ret;
 }
 
@@ -76,7 +76,7 @@ sub DeleteAuthor {
 
     my $sth = $self->dbh->prepare($self->__set_comment($DeleteAuthor));
     my @bind = ($id);
-    my $ret = $sth->execute(@bind) or croak $sth->errstr;
+    my $ret = $sth->execute(@bind) or Carp::croak $sth->errstr;
     return $ret;
 }
 
@@ -91,7 +91,7 @@ sub GetAuthor {
 
     my $sth = $self->dbh->prepare($self->__set_comment($GetAuthor));
     my @bind = ($id);
-    my $ret = $sth->execute(@bind) or croak $sth->errstr;
+    my $ret = $sth->execute(@bind) or Carp::croak $sth->errstr;
 
     my $row = $ret && $sth->fetchrow_hashref;
     return unless $row;
@@ -109,11 +109,11 @@ sub ListAuthors {
     my ($self) = @_;
 
     my $sth = $self->dbh->prepare($self->__set_comment($ListAuthors));
-    my $ret = $sth->execute() or croak $sth->errstr;
+    my $ret = $sth->execute() or Carp::croak $sth->errstr;
 
     my $rows = $ret && $sth->fetchall_arrayref({});
 
-    assert { (ArrayRef[Author])->check($rows) };
+    assert { (Types::Standard::ArrayRef[Author])->check($rows) };
     return $rows;
 }
 
@@ -125,7 +125,7 @@ sub CountAuthors {
     my ($self) = @_;
 
     my $sth = $self->dbh->prepare($self->__set_comment($CountAuthors));
-    my $ret = $sth->execute() or croak $sth->errstr;
+    my $ret = $sth->execute() or Carp::croak $sth->errstr;
 
     my $row = $ret && $sth->fetchrow_arrayref;
     return unless $row;
@@ -140,20 +140,20 @@ GROUP BY name
 ORDER BY count
 };
 
-use kura CountAuthorsByNameRow => Dict[
-    name => Str,
-    count => Int,
+use kura CountAuthorsByNameRow => Types::Standard::Dict[
+    name => Types::Standard::Str,
+    count => Types::Standard::Int,
 ];
 
 sub CountAuthorsByName {
     my ($self) = @_;
 
     my $sth = $self->dbh->prepare($self->__set_comment($CountAuthorsByName));
-    my $ret = $sth->execute() or croak $sth->errstr;
+    my $ret = $sth->execute() or Carp::croak $sth->errstr;
 
     my $rows = $ret && $sth->fetchall_arrayref({});
 
-    assert { (ArrayRef[CountAuthorsByNameRow])->check($rows) };
+    assert { (Types::Standard::ArrayRef[CountAuthorsByNameRow])->check($rows) };
     return $rows;
 }
 
