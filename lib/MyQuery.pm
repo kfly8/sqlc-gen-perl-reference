@@ -1,11 +1,13 @@
 package MyQuery;
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use utf8;
+use feature qw(state);
 
 use Carp ();
 use Syntax::Keyword::Assert;
 use Types::Standard ();
+use Devel::StrictMode;
 
 sub new {
     my ($class, $dbh) = @_;
@@ -34,11 +36,75 @@ sub __set_comment {
     $query;
 }
 
+sub __error_message {
+    my ($self, %args) = @_;
+
+    my $subname   = $args{subname};
+    my $type      = $args{type};
+    my $typename  = $args{typename};
+    my $params    = $args{params};
+    my $usage     = $args{usage};
+
+    my $subject = 'error: invalid parameters';
+
+    # Dictの場合
+    # - 期待のキーが存在しない
+    # - キーの型が違う
+    # - キーが余分
+    # - [x] そもそもハッシュでない
+
+    my $code_template = "\$q->$subname(%s)";
+
+    state $detect_reason;
+    $detect_reason //= sub {
+        my %args = @_;
+        my $typename = $args{typename};
+        my $type     = $args{type};
+        my $params   = $args{params};
+
+        if ($type->is_a_type_of('Dict')) {
+            if ((ref $params||'') eq 'HASH') {
+                ...
+            }
+            else {
+                my $plen = length $params;
+                my $code = sprintf($code_template, $params);
+                my $indent = " " x ( (length $code) - ($plen) - 1 );
+                my $seek = '^' x $plen;
+                return "$code\n$indent$seek expected `$typename`, but got `@{[ $params ]}`";
+            }
+        }
+        else {
+            ...
+        }
+    };
+
+    my $reason = $detect_reason->(
+        typename => $typename,
+        type     => $type,
+        params   => $params,
+    );
+
+    #$reason .= "\n\n$reason";
+
+    my $indent = " " x 2;
+    $reason =~ s/\n/\n$indent/g;
+    $usage =~ s/\n/\n$indent/g;
+
+    return "$subject
+
+  $reason
+
+  Usage:
+    $usage
+"
+}
+
 # Define Models
 use kura Author => Types::Standard::Dict[
-  id => Types::Standard::Int,
-  name => Types::Standard::Str,
-  bio => Types::Standard::Str,
+    id => Types::Standard::Int,
+    name => Types::Standard::Str,
+    bio => Types::Standard::Str,
 ];
 
 # Define Queries
@@ -56,11 +122,28 @@ use kura CreateAuthorParams => Types::Standard::Dict[
 ];
 
 sub CreateAuthor {
-    my ($self, $arg) = @_;
-    assert { CreateAuthorParams->check($arg) };
+    my $self = shift;
+    my $params = @_ == 1 ? $_[0] : { @_ };
+    STRICT && do {
+        unless (CreateAuthorParams->check($params)) {
+            my $usage = <<USAGE;
+\$q->CreateAuthor(
+    name => Str,
+    bio => Str,
+)
+USAGE
+            Carp::croak $self->__error_message(
+                subname      => 'CreateAuthor',
+                typename     => 'CreateAuthorParams',
+                type         => CreateAuthorParams,
+                params       => $params,
+                usage        => $usage,
+            )
+        }
+    };
 
     my $sth = $self->dbh->prepare($self->__set_comment($CreateAuthor));
-    my @bind = ($arg->{name}, $arg->{bio});
+    my @bind = ($params->{name}, $params->{bio});
     my $ret = $sth->execute(@bind) or Carp::croak $sth->errstr;
     return $ret;
 }

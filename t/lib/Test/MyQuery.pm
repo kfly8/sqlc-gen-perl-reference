@@ -3,9 +3,11 @@ use strict;
 use warnings;
 
 use parent qw(Test::Class);
+
 use Test2::V0;
 use DBI;
 use MyQuery;
+use Devel::StrictMode;
 
 sub create_schema : Test(setup) {
     my $dbh = connect_db();
@@ -50,7 +52,7 @@ sub test_sql : Tests {
     $q->ListAuthors();
 
     like $SQL, qr[-- name: ListAuthors], 'SQL includes method name';
-    like $SQL, qr[-- called at t/lib/Test/MyQuery.pm line 50], 'SQL includes caller info';
+    like $SQL, qr[-- called at t/lib/Test/MyQuery.pm line 52], 'SQL includes caller info';
 }
 
 sub test_models : Tests {
@@ -62,28 +64,22 @@ sub test_models : Tests {
     ok !Author->check({ id => 'a', name => 'John Doe', bio => 'A mysterious' });
 }
 
-sub test_strict_mode : Tests {
-    use Devel::StrictMode;
-
+sub test_error_message : Tests {
     my $dbh = connect_db();
     my $q = MyQuery->new($dbh);
 
-    my $illegal_params = { naaame => 'John' };
+    if (!STRICT) {
+        like dies { $q->CreateAuthor(123) }, qr{Can't use string \("123"\) as a HASH};
+        return;
+    }
 
-    if (STRICT) {
-        note 'Not query invalid data';
-        like dies {
-            $q->CreateAuthor($illegal_params);
-        }, qr[Assertion failed at t/lib/Test/MyQuery.pm];
-    }
-    else {
-        note 'Query invalid data';
-        ok warning {
-            like dies {
-                $q->CreateAuthor($illegal_params);
-            }, qr[NOT NULL constraint failed: authors.name];
-        };
-    }
+    subtest 'Given 123' => sub {
+        my $err = dies { $q->CreateAuthor(123) };
+        like $err, qr{
+  .q\Q->CreateAuthor(123)\E
+                   \Q^^^ expected `CreateAuthorParams`, but got `123`\E};
+        note $err;
+    };
 }
 
 # Tests helper
