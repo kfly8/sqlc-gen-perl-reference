@@ -45,6 +45,18 @@ sub __error_message {
     my $params    = $args{params};
     my $usage     = $args{usage};
 
+    state $dd = sub {
+        my $value = shift;
+
+        require Data::Dumper;
+        local $Data::Dumper::Indent   = 0;
+        local $Data::Dumper::Terse    = 1;
+        local $Data::Dumper::Sortkeys = 1;
+        local $Data::Dumper::Maxdepth = 2;
+
+        Data::Dumper::Dumper($value);
+    };
+
     my $subject = 'error: invalid parameters';
 
     # Dictの場合
@@ -67,11 +79,12 @@ sub __error_message {
                 ...
             }
             else {
-                my $plen = length $params;
-                my $code = sprintf($code_template, $params);
-                my $indent = " " x ( (length $code) - ($plen) - 1 );
-                my $seek = '^' x $plen;
-                return "$code\n$indent$seek expected `$typename`, but got `@{[ $params ]}`";
+                my $str_params = $dd->($params);
+                my $len_params = length $str_params;
+                my $code = sprintf($code_template, $str_params);
+                my $indent = " " x ( (length $code) - ($len_params) - 1 );
+                my $seek = '^' x $len_params;
+                return "$code\n$indent$seek expected `$typename`, but got `$str_params`";
             }
         }
         else {

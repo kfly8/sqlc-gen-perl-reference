@@ -73,12 +73,21 @@ sub test_error_message : Tests {
         return;
     }
 
-    subtest 'Given 123' => sub {
+    subtest "Given 123" => sub {
         my $err = dies { $q->CreateAuthor(123) };
         like $err, qr{
   .q\Q->CreateAuthor(123)\E
                    \Q^^^ expected `CreateAuthorParams`, but got `123`\E};
         note $err;
+    };
+
+    subtest "Given 'hello'" => sub {
+        my $err = dies { $q->CreateAuthor('hello') };
+        like $err, qr{
+  .q\Q->CreateAuthor('hello')\E
+                   \Q^^^^^^^ expected `CreateAuthorParams`, but got `'hello'`\E};
+        note $err;
+
     };
 }
 
