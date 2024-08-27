@@ -75,16 +75,28 @@ sub __error_message {
         my $params   = $args{params};
 
         if ($type->is_a_type_of('Dict')) {
-            if ((ref $params||'') eq 'HASH') {
+            my $ref = ref $params || '';
+            if ($ref eq 'HASH') {
                 ...
             }
             else {
-                my $str_params = $dd->($params);
-                my $len_params = length $str_params;
-                my $code = sprintf($code_template, $str_params);
-                my $indent = " " x ( (length $code) - ($len_params) - 1 );
-                my $seek = '^' x $len_params;
-                return "$code\n$indent$seek expected `$typename`, but got `$str_params`";
+                my $code_params = $ref eq 'ARRAY' ? do {
+                                      my $first = $dd->($params->[0]);
+                                      my $rest = @$params > 1 ? ',...' : '';
+                                      "[$first$rest]"
+                                  }
+                                : $dd->($params);
+
+                my $code = sprintf($code_template, $code_params);
+
+                my $len    = length $code_params;
+                my $indent = " " x ( (length $code) - ($len) - 1 );
+                my $seek   = '^' x $len;
+
+                my $got_message = $ref ? "`$ref` reference"
+                                : "`@{[$dd->($params)]}`";
+
+                return "$code\n$indent$seek expected `$typename`, but got $got_message";
             }
         }
         else {

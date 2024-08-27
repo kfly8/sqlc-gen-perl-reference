@@ -97,6 +97,24 @@ sub test_error_message : Tests {
                    \Q^^^^^ expected `CreateAuthorParams`, but got `undef`\E};
         note $err;
     };
+
+    subtest "Given ArrayRef" => sub {
+        subtest 'single arrayref' => sub {
+            my $err = dies { $q->CreateAuthor([123]) };
+            like $err, qr{
+  .q\Q->CreateAuthor([123])\E
+                   \Q^^^^^ expected `CreateAuthorParams`, but got `ARRAY` reference\E};
+            note $err;
+        };
+
+        subtest 'multi arrayref' => sub {
+            my $err = dies { $q->CreateAuthor([123,456,789]) };
+            like $err, qr{
+  .q\Q->CreateAuthor([123,...])\E
+                   \Q^^^^^^^^^ expected `CreateAuthorParams`, but got `ARRAY` reference\E};
+            note $err;
+        };
+    };
 }
 
 # Tests helper
