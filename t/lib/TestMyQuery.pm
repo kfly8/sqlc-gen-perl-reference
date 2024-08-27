@@ -1,4 +1,4 @@
-package Test::MyQuery;
+package TestMyQuery;
 use strict;
 use warnings;
 
@@ -52,7 +52,7 @@ sub test_sql : Tests {
     $q->ListAuthors();
 
     like $SQL, qr[-- name: ListAuthors], 'SQL includes method name';
-    like $SQL, qr[-- called at t/lib/Test/MyQuery.pm line 52], 'SQL includes caller info';
+    like $SQL, qr[-- called at t/lib/TestMyQuery.pm line 52], 'SQL includes caller info';
 }
 
 sub test_models : Tests {

@@ -1,4 +1,4 @@
 use lib 't/lib';
 
-use Test::MyQuery;
-Test::MyQuery->runtests;
+use TestMyQuery;
+TestMyQuery->runtests;
