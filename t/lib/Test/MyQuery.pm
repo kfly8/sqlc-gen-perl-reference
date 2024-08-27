@@ -89,6 +89,14 @@ sub test_error_message : Tests {
         note $err;
 
     };
+
+    subtest "Given undef" => sub {
+        my $err = dies { $q->CreateAuthor(undef) };
+        like $err, qr{
+  .q\Q->CreateAuthor(undef)\E
+                   \Q^^^^^ expected `CreateAuthorParams`, but got `undef`\E};
+        note $err;
+    };
 }
 
 # Tests helper
